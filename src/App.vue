@@ -1,5 +1,5 @@
 <template>
-  <div id="app" :class="(typeof weather.main != 'undefined' && Math.round(weather.main.temp) < 0) ? 'cold' : (typeof weather.main != 'undefined' && Math.round(weather.main.temp) > 20) ? 'hot' : ''">
+  <div id="app" :class="(typeof weather.city != 'undefined' && Math.round(weather.list[0].main.temp) < 0) ? 'cold' : (typeof weather.city != 'undefined' && Math.round(weather.list[0].main.temp) > 20) ? 'hot' : ''">
     <main>
       <div class="search-box">
         <input 
@@ -11,37 +11,64 @@
         />
       </div>
 
-      <div class="weather-wrap" v-if="typeof weather.main != 'undefined'">
+      <div class="weather-wrap" v-if="typeof weather.city != 'undefined'">
         <div class="location-box">
-          <div class="location">{{ weather.name }}, {{ weather.sys.country }}</div>
-          <div class="date">{{dateBuilder()}}</div>
+
+          <div class="location">{{ weather.city.name }} {{ weather.city.country }}</div>
+          <div class="main-date">{{dateBuilder()}}</div>
         </div>
 
         <div class="weather-box">
-          <div class="temp">{{ Math.round(weather.main.temp)}}°c
-          <div class="feels-like">Odczuwalna: {{ Math.round(weather.main.feels_like)}}°c</div>
-</div>
-          <div class="weather">{{ weather.weather[0].description.toUpperCase() }}</div><br>
-          <div class="date">Zachmurzenie: {{weather.clouds.all}}%</div>
-          <div class="date">Wschód słońca: {{convertTime(weather.sys.sunrise)}}</div>
-          <div class="date">Zachód słońca: {{convertTime(weather.sys.sunset)}}</div><br>
-          
+
+          <div class="main-temp">
+            <img class="main-icon" v-bind:src="'http://openweathermap.org/img/wn/'+weather.list[0].weather[0].icon+'.png'" alt="Weather icon">
+            <div class="margin">{{ Math.round(weather.list[0].main.temp)}}°c</div>
+            <div class="feels-like">Odczuwalna: {{ Math.round(weather.list[0].main.feels_like)}}°c</div>
+          </div>
+          <div class="weather">{{ weather.list[0].weather[0].description.toUpperCase() }}</div><br>
+          <div class="main-date">Zachmurzenie: {{weather.list[0].clouds.all}}%</div>
+          <div class="main-date">Opady: {{weather.list[0].rain['3h']}} mm</div>
+          <div class="main-date">Zachód słońca: {{ weather.list[0].wind.speed }} m/s</div><br>
+
 
         </div>
 
         <div class="weather-box">
-        <div class="week-weather">
+        <div class="hourly-weather">
           <div v-on:click="weekWeather = !weekWeather" class="weather-botton">
-            <div v-show="!weekWeather" class="">
-              Pokaż pogodę na następne dni
+            <div v-show="!weekWeather" class="" >
+              Pokaż pogodę godzinową
             </div>
             <div v-show="weekWeather" class="">
-              Schowaj pogodę na następne dni
+              Schowaj pogodę godzinową
             </div>
           
           </div>
           <div v-show="weekWeather" class="">
-            jakas podoga
+            <table class="table-hover" v-if="weather">
+              <tbody>
+              <tr v-for="item in weather.list" :key="item.id" class="weather-item">
+                <td class="hour"><div class="date"> {{ convertDate(item.dt) }}</div> {{ convertTime(item.dt) }}</td>
+                <td class="rain" >
+                  <div v-if="typeof item.rain != 'undefined'">{{ item.rain['3h'] }} mm</div>
+                  <div v-if="typeof item.rain == 'undefined'">0 mm</div>
+                </td>
+                <td class="temp">
+                  <div class="temp-line">
+                      <img v-bind:src="'http://openweathermap.org/img/wn/'+item.weather[0].icon+'.png'" alt="Weather icon">
+
+                      {{ Math.round(item.main.temp) }}°c
+
+
+                  </div>
+                </td>
+                <!--                <td>{{ item.status }}></td>-->
+<!--                <td>{{ item.title }}></td>-->
+<!--                <td>{{ item.summary }}></td>-->
+                <!-- and so on -->
+              </tr>
+              </tbody>
+            </table>
           </div>
         </div>
         </div>
@@ -64,20 +91,22 @@ export default {
       api_key: '37dd4b294eaebd27d5b3350697b71fec',
       url_base: 'https://api.openweathermap.org/data/2.5/',
       query: '',
-      weather: {}
+      weather: {},
     }
   },
   methods: {
     fetchWeather (e) {
       if (e.key == "Enter") {
-        fetch(`${this.url_base}weather?q=${this.query}&units=metric&lang=pl&APPID=${this.api_key}`)
-          .then(res => {
+        fetch(`${this.url_base}forecast?q=${this.query}&units=metric&lang=pl&APPID=${this.api_key}`)
+
+            .then(res => {
             return res.json();
           }).then(this.setResults);
       }
     },
     setResults (results) {
       this.weather = results;
+      console.log(this.weather)
     },
     dateBuilder (){
       let d = new Date();
@@ -98,8 +127,15 @@ export default {
       let date = new Date(results * 1000);
       let hour = date.getHours();
       let minute = "0" + date.getMinutes();
-      let time = hour + ":" + minute.substr(-2);
+      let time = +hour + ":" + minute.substr(-2);
       return time;
+    },
+    convertDate(results){
+      let date = new Date(results * 1000);
+      let month = (date.getMonth()+1).toLocaleString('pl-PL', {minimumIntegerDigits: 2, useGrouping:false});
+      let day = date.getDate();
+      let dateString = day+"."+month;
+      return dateString;
     },
   }
 }
@@ -117,18 +153,22 @@ body {
 }
 
 #app {
-  background-image: url('./assets/warm-bg.jpg');
+  width: 100vw;
+  background: url('./assets/warm-bg.jpg') fixed;
   background-size: cover;
-  background-position: bottom;
   transition: 0.4s;
 }
 
 #app.cold {
-  background-image: url('./assets/cold-bg.jpg');
+  background: url('./assets/cold-bg.jpg') fixed;
+  background-size: cover;
+
 }
 
 #app.hot {
-  background-image: url('./assets/hot-bg.jpg');
+  background: url('./assets/hot-bg.jpg') fixed;
+  background-size: cover;
+
 }
 
 main {
@@ -176,19 +216,20 @@ main {
   text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
 }
 
-.date {
+.main-date {
   color: #FFF;
   font-size: 20px;
   font-weight: 300;
   font-style: italic;
   text-align: center;
+  text-shadow: none;
 }
 
 .weather-box {
   text-align: center;
 }
 
-.weather-box .temp {
+.weather-box .main-temp {
   
   display: inline-block;
   padding: 10px 25px;
@@ -204,6 +245,10 @@ main {
 
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
   transition: 0.6s;
+}
+
+.main-temp .margin{
+  margin-top: -50px;
 }
 
 .weather-box .feels-like {
@@ -234,8 +279,8 @@ main {
   margin: 10px 0;
 }
 
-.weather-box .week-weather {
-  
+.weather-box .hourly-weather {
+  width: 100%;
   display: inline-block;
   padding: 10px 25px;
   color: #FFF;
@@ -250,6 +295,68 @@ main {
 
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
   transition: 0.4s;
+}
+
+.table-hover{
+  width: 100%;
+}
+
+.hourly-weather .hour{
+  padding-top: 15px;
+  border-collapse: collapse;
+  display: flex;
+}
+
+.hourly-weather .date{
+  padding-top: 10px;
+  color: #FFF;
+  font-size: 15px;
+  text-align: center;
+  text-shadow: none;
+  margin-right: 10px;
+
+}
+
+table {
+  border-collapse: collapse;
+}
+
+.table-hover td{
+  block-size: 60px;
+  border-top: #d9d9d9 solid 1px;
+
+}
+
+
+.hourly-weather .temp{
+  text-align: end;
+  color: #FFF;
+  font-size: 38px;
+  font-weight: 700;
+  margin: 30px 0;
+}
+
+.temp-line{
+  display: flex;
+
+}
+
+.temp-line *{
+  margin-left: auto;
+  margin-right: 0;
+}
+
+
+.hourly-weather .rain{
+
+}
+
+tr{
+  margin-top: 20px;
+}
+
+.main-icon{
+  height: 130px;
 }
 
 </style>
