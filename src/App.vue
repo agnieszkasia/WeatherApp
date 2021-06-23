@@ -28,7 +28,7 @@
           </div>
           <div class="weather">{{ weather.current.weather[0].description.toUpperCase() }}</div><br>
           <div class="main-date">Zachmurzenie: {{weather.current.clouds}}%</div>
-          <div class="main-date" v-if="typeof weather.current.rain != 'undefined'">Opady: {{weather.current.rain}} mm</div>
+          <div class="main-date" v-if="typeof weather.current.rain != 'undefined'">Opady: {{weather.current.rain['1h']}} mm</div>
           <div class="main-date" v-if="typeof weather.current.rain == 'undefined'">Opady: 0 mm</div>
           <div class="main-date">Wiatr: {{ weather.current.wind_speed }} m/s</div><br>
 
