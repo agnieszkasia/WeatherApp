@@ -1,5 +1,6 @@
 <template>
-  <div id="app" :class="(typeof weather.city != 'undefined' && Math.round(weather.list[0].main.temp) < 0) ? 'cold' : (typeof weather.city != 'undefined' && Math.round(weather.list[0].main.temp) > 20) ? 'hot' : ''">
+  <div id="app" :class="(typeof weatherData.city != 'undefined' && Math.round(weatherData.list[0].main.temp) < 0) ? 'cold' :
+          (typeof weatherData.city != 'undefined' && Math.round(weatherData.list[0].main.temp) > 20) ? 'hot' : ''">
     <main>
       <div class="search-box">
         <input 
@@ -11,66 +12,97 @@
         />
       </div>
 
-      <div class="weather-wrap" v-if="typeof weather.city != 'undefined'">
+      <div class="weather-wrap" v-if="typeof weatherData.city != 'undefined'">
         <div class="location-box">
 
-          <div class="location">{{ weather.city.name }} {{ weather.city.country }}</div>
+          <div class="location">{{ weatherData.city.name }} {{ weatherData.city.country }}</div>
           <div class="main-date">{{dateBuilder()}}</div>
         </div>
 
-        <div class="weather-box">
+        <div class="weather-box" v-if="typeof weather != 'undefined'">
 
           <div class="main-temp">
-            <img class="main-icon" v-bind:src="'http://openweathermap.org/img/wn/'+weather.list[0].weather[0].icon+'.png'" alt="Weather icon">
-            <div class="margin">{{ Math.round(weather.list[0].main.temp)}}°c</div>
-            <div class="feels-like">Odczuwalna: {{ Math.round(weather.list[0].main.feels_like)}}°c</div>
+            <img class="main-icon" v-bind:src="'http://openweathermap.org/img/wn/'+weather.current.weather[0].icon+'.png'" alt="Weather icon">
+            <div class="margin">{{ Math.round(weather.current.temp)}}°c</div>
+            <div class="feels-like">Odczuwalna: {{ Math.round(weather.current.feels_like)}}°c</div>
           </div>
-          <div class="weather">{{ weather.list[0].weather[0].description.toUpperCase() }}</div><br>
-          <div class="main-date">Zachmurzenie: {{weather.list[0].clouds.all}}%</div>
-          <div class="main-date">Opady: {{weather.list[0].rain['3h']}} mm</div>
-          <div class="main-date">Zachód słońca: {{ weather.list[0].wind.speed }} m/s</div><br>
+          <div class="weather">{{ weather.current.weather[0].description.toUpperCase() }}</div><br>
+          <div class="main-date">Zachmurzenie: {{weather.current.clouds}}%</div>
+          <div class="main-date" v-if="typeof weather.current.rain != 'undefined'">Opady: {{weather.current.rain}} mm</div>
+          <div class="main-date" v-if="typeof weather.current.rain == 'undefined'">Opady: 0 mm</div>
+          <div class="main-date">Wiatr: {{ weather.current.wind_speed }} m/s</div><br>
 
 
         </div>
 
         <div class="weather-box">
         <div class="hourly-weather">
-          <div v-on:click="weekWeather = !weekWeather" class="weather-botton">
-            <div v-show="!weekWeather" class="" >
+          <div v-on:click="hourlyWeather = !hourlyWeather" class="weather-botton">
+            <div v-show="!hourlyWeather" class="" >
               Pokaż pogodę godzinową
             </div>
-            <div v-show="weekWeather" class="">
+            <div v-show="hourlyWeather" class="">
               Schowaj pogodę godzinową
             </div>
-          
+
           </div>
-          <div v-show="weekWeather" class="">
-            <table class="table-hover" v-if="weather">
+          <div v-show="hourlyWeather" class="">
+            <table class="table-hover" >
               <tbody>
-              <tr v-for="item in weather.list" :key="item.id" class="weather-item">
+              <tr v-for="item in weather.hourly" :key="item.id" class="weather-item">
                 <td class="hour"><div class="date"> {{ convertDate(item.dt) }}</div> {{ convertTime(item.dt) }}</td>
                 <td class="rain" >
-                  <div v-if="typeof item.rain != 'undefined'">{{ item.rain['3h'] }} mm</div>
+                  <div v-if="typeof item.rain != 'undefined'">{{ item.rain['1h'] }} mm</div>
                   <div v-if="typeof item.rain == 'undefined'">0 mm</div>
                 </td>
                 <td class="temp">
                   <div class="temp-line">
                       <img v-bind:src="'http://openweathermap.org/img/wn/'+item.weather[0].icon+'.png'" alt="Weather icon">
 
-                      {{ Math.round(item.main.temp) }}°c
+                      {{ Math.round(item.temp) }}°c
 
 
                   </div>
                 </td>
-                <!--                <td>{{ item.status }}></td>-->
-<!--                <td>{{ item.title }}></td>-->
-<!--                <td>{{ item.summary }}></td>-->
-                <!-- and so on -->
               </tr>
               </tbody>
             </table>
           </div>
         </div>
+        </div>
+
+        <div class="weather-box">
+          <div class="hourly-weather">
+            <div v-on:click="weekWeather = !weekWeather" class="weather-botton">
+              <div v-show="!weekWeather" class="" >
+                Pokaż pogodę na tydzień
+              </div>
+              <div v-show="weekWeather" class="">
+                Schowaj pogodę na tydzień
+              </div>
+
+            </div>
+            <div v-show="weekWeather" class="">
+              <table class="table-hover" >
+                <tbody>
+                <tr v-for="item in weather.daily" :key="item.id" class="weather-item">
+                  <td class="hour"><div class="date"> {{ convertDate(item.dt) }}</div> {{ getDayName(item.dt) }}</td>
+                  <td class="rain" >
+                    <div v-if="typeof item.rain != 'undefined'">{{ item.rain}} mm</div>
+                    <div v-if="typeof item.rain == 'undefined'">0 mm</div>
+                  </td>
+                  <td class="temp">
+                    <div class="temp-line">
+                      <img v-bind:src="'http://openweathermap.org/img/wn/'+item.weather[0].icon+'.png'" alt="Weather icon">
+
+                      {{ Math.round(item.temp.day) }}°c
+                    </div>
+                  </td>
+                </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
 
         
@@ -87,26 +119,38 @@ export default {
   name: 'app',
   data () {
     return {
+      hourlyWeather: false,
       weekWeather: false,
       api_key: '37dd4b294eaebd27d5b3350697b71fec',
       url_base: 'https://api.openweathermap.org/data/2.5/',
       query: '',
       weather: {},
+      weatherData: {},
     }
   },
   methods: {
     fetchWeather (e) {
       if (e.key == "Enter") {
         fetch(`${this.url_base}forecast?q=${this.query}&units=metric&lang=pl&APPID=${this.api_key}`)
-
             .then(res => {
             return res.json();
           }).then(this.setResults);
       }
     },
     setResults (results) {
-      this.weather = results;
-      console.log(this.weather)
+      this.weatherData = results;
+      let lon = results.city.coord.lon;
+      let lat = results.city.coord.lat;
+      fetch(`${this.url_base}onecall?lat=${lat}&lon=${lon}&units=metric&lang=pl&APPID=${this.api_key}`)
+          .then(res => {
+                return res.json();
+          }).then(this.setWeather);
+
+    },
+    setWeather(result){
+      this.weather = result;
+      console.log(this.weather);
+      console.log(this.weatherData);
     },
     dateBuilder (){
       let d = new Date();
@@ -122,6 +166,14 @@ export default {
       let year = d.getFullYear();
 
       return `${day}, ${date} ${month} ${year}`;
+    },
+    getDayName(results){
+      let d = new Date(results * 1000);
+      let days = ["Niedziela","Poniedziałek", "Wtorek", "Środa", "Czwartek",
+        "Piątek", "Sobota"];
+
+      let day = days[d.getDay()];
+      return day;
     },
     convertTime(results){
       let date = new Date(results * 1000);
@@ -282,7 +334,7 @@ main {
 .weather-box .hourly-weather {
   width: 100%;
   display: inline-block;
-  padding: 10px 25px;
+  padding: 10px 15px;
   color: #FFF;
   font-size: 24px;
   font-weight: 700;
@@ -291,7 +343,7 @@ main {
   
   background-color:rgba(255, 255, 255, 0.5);
   border-radius: 16px;
-  margin: 30px 0;
+  margin: 10px 0;
 
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.25);
   transition: 0.4s;
