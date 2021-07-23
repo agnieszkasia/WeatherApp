@@ -18,3 +18,15 @@ To run this project:
 * Show current weather
 * Show daily weather forecast 
 * Show hourly weather forecast 
+
+![WeatherApp](./images/1.jpg)
+
+![WeatherApp - low temerature](./images/2.jpg)
+
+![WeatherApp - normal temperature](./images/3.jpg)
+
+![WeatherApp - high temerature](./images/4.jpg)
+
+![WeatherApp - hourly weather forcast](./images/5.jpg)
+
+![WeatherApp - daily weather forcast](./images/6.jpg)
